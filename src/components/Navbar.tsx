@@ -82,25 +82,6 @@ const Navbar: React.FC = () => {
                         </svg>
                         Scoreboard
                     </NavLink>
-                    <NavLink
-                        to="/timer"
-                        className={({ isActive }) =>
-                            `nav-link ${isActive ? "nav-link-active" : ""}`
-                        }
-                    >
-                        <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            width="18"
-                            height="18"
-                        >
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        Timer
-                    </NavLink>
                 </div>
             </div>
         </nav>

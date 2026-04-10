@@ -23,6 +23,7 @@ export interface TimerState {
 export interface RoundResult {
     roundNumber: number;
     scores: Record<string, number>; // teamId -> score in this round
+    times: Record<string, number>; // teamId -> time taken (in seconds) in this round
 }
 
 export interface GameState {

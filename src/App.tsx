@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
@@ -8,14 +8,33 @@ import TimerPage from "./pages/TimerPage";
 import type { GameState, Team } from "./types";
 import "./App.css";
 
+const STORAGE_KEY = "unwind_game_state";
+
+const initialGameState: GameState = {
+    teams: [],
+    totalRounds: 3,
+    currentRound: 1,
+    roundResults: [],
+    isStarted: false,
+};
+
 const App: React.FC = () => {
-    const [gameState, setGameState] = useState<GameState>({
-        teams: [],
-        totalRounds: 3,
-        currentRound: 1,
-        roundResults: [],
-        isStarted: false,
+    const [gameState, setGameState] = useState<GameState>(() => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error("Failed to load state", e);
+            }
+        }
+        return initialGameState;
     });
+
+    // Persist state on change
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+    }, [gameState]);
 
     const handleUpdateTeams = (teams: Team[]) => {
         setGameState((prev) => ({ ...prev, teams, isStarted: false }));
@@ -42,15 +61,23 @@ const App: React.FC = () => {
                 (r) => r.roundNumber === roundNumber,
             );
 
+            const updatedScores =
+                roundIdx > -1
+                    ? { ...results[roundIdx].scores, [teamId]: score }
+                    : { [teamId]: score };
+
+            const updatedTimes = roundIdx > -1 ? results[roundIdx].times : {};
+
             if (roundIdx > -1) {
                 results[roundIdx] = {
                     ...results[roundIdx],
-                    scores: { ...results[roundIdx].scores, [teamId]: score },
+                    scores: updatedScores,
                 };
             } else {
                 results.push({
                     roundNumber,
-                    scores: { [teamId]: score },
+                    scores: updatedScores,
+                    times: updatedTimes,
                 });
             }
 
@@ -67,11 +94,56 @@ const App: React.FC = () => {
         });
     };
 
+    const handleUpdateTime = (
+        roundNumber: number,
+        teamId: string,
+        time: number,
+    ) => {
+        setGameState((prev) => {
+            const results = [...prev.roundResults];
+            const roundIdx = results.findIndex(
+                (r) => r.roundNumber === roundNumber,
+            );
+
+            const updatedTimes =
+                roundIdx > -1
+                    ? { ...results[roundIdx].times, [teamId]: time }
+                    : { [teamId]: time };
+
+            const updatedScores = roundIdx > -1 ? results[roundIdx].scores : {};
+
+            if (roundIdx > -1) {
+                results[roundIdx] = {
+                    ...results[roundIdx],
+                    times: updatedTimes,
+                };
+            } else {
+                results.push({
+                    roundNumber,
+                    scores: updatedScores,
+                    times: updatedTimes,
+                });
+            }
+            return { ...prev, roundResults: results };
+        });
+    };
+
     const handleNextRound = () => {
         setGameState((prev) => ({
             ...prev,
             currentRound: Math.min(prev.currentRound + 1, prev.totalRounds),
         }));
+    };
+
+    const handleResetGame = () => {
+        if (
+            window.confirm(
+                "Are you sure you want to reset the current game? Teams and scores will be cleared.",
+            )
+        ) {
+            setGameState(initialGameState);
+            localStorage.removeItem(STORAGE_KEY);
+        }
     };
 
     return (
@@ -88,6 +160,7 @@ const App: React.FC = () => {
                                     teams={gameState.teams}
                                     onUpdateTeams={handleUpdateTeams}
                                     onStartGame={handleStartGame}
+                                    onReset={handleResetGame}
                                 />
                             }
                         />
@@ -97,7 +170,9 @@ const App: React.FC = () => {
                                 <ScoreboardPage
                                     gameState={gameState}
                                     onUpdateScore={handleUpdateScore}
+                                    onUpdateTime={handleUpdateTime}
                                     onNextRound={handleNextRound}
+                                    onReset={handleResetGame}
                                 />
                             }
                         />

@@ -93,7 +93,7 @@ const HomePage: React.FC = () => {
                     link="/scoreboard"
                     linkLabel="View Scores →"
                 />
-                <FeatureCard
+                {/* <FeatureCard
                     icon={
                         <svg
                             viewBox="0 0 24 24"
@@ -112,7 +112,7 @@ const HomePage: React.FC = () => {
                     color="#7000FF"
                     link="/timer"
                     linkLabel="Start Timer →"
-                />
+                /> */}
             </section>
 
             {/* Players preview */}

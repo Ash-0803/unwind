@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from "react";
-import type { Team, TeamGenerationMode } from "../types";
+import React, { useState, useCallback, useMemo } from "react";
+import type { Team, TeamGenerationMode, Player } from "../types";
 import { initialPlayers, TEAM_COLORS, TEAM_NAMES } from "../data/players";
 import TeamCard from "../components/TeamCard";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ interface TeamsPageProps {
     teams: Team[];
     onUpdateTeams: (teams: Team[]) => void;
     onStartGame: (rounds: number) => void;
+    onReset: () => void;
 }
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -20,11 +21,12 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 function generateTeams(
+    players: Player[],
     numTeams: number,
     colors: string[],
     names: string[],
 ): Team[] {
-    const shuffled = shuffleArray(initialPlayers);
+    const shuffled = shuffleArray(players);
     const teams: Team[] = Array.from({ length: numTeams }, (_, i) => ({
         id: `team-${i}`,
         name: names[i] ?? `Team ${String.fromCharCode(65 + i)}`,
@@ -40,40 +42,151 @@ function generateTeams(
     return teams;
 }
 
+type Step = "select" | "shuffle" | "lineup";
+
 const TeamsPage: React.FC<TeamsPageProps> = ({
     teams,
     onUpdateTeams,
     onStartGame,
+    onReset,
 }) => {
     const navigate = useNavigate();
+    const [step, setStep] = useState<Step>(
+        teams.length > 0 ? "shuffle" : "select",
+    );
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [mode, setMode] = useState<TeamGenerationMode>("numTeams");
     const [numTeams, setNumTeams] = useState(2);
-    const [teamSize, setTeamSize] = useState(9);
-    const [isFullView, setIsFullView] = useState(false);
+    const [teamSize, setTeamSize] = useState(4);
     const [rounds, setRounds] = useState(3);
 
-    const totalPlayers = initialPlayers.length;
+    const selectedPlayers = useMemo(
+        () => initialPlayers.filter((p) => selectedIds.includes(p.id)),
+        [selectedIds],
+    );
+
+    const togglePlayer = (id: number) => {
+        setSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+        );
+    };
+
+    const selectAll = () => setSelectedIds(initialPlayers.map((p) => p.id));
+    const deselectAll = () => setSelectedIds([]);
 
     const computedNumTeams =
-        mode === "numTeams" ? numTeams : Math.ceil(totalPlayers / teamSize);
+        mode === "numTeams"
+            ? numTeams
+            : Math.ceil(selectedPlayers.length / teamSize);
 
     const handleGenerate = useCallback(() => {
+        if (selectedPlayers.length === 0) {
+            alert("Please select at least one player first!");
+            return;
+        }
         const count = Math.max(1, Math.min(computedNumTeams, 8));
-        const newTeams = generateTeams(count, TEAM_COLORS, TEAM_NAMES);
+        const newTeams = generateTeams(
+            selectedPlayers,
+            count,
+            TEAM_COLORS,
+            TEAM_NAMES,
+        );
         onUpdateTeams(newTeams);
-        setIsFullView(false);
-    }, [computedNumTeams, onUpdateTeams]);
+        setStep("shuffle");
+    }, [computedNumTeams, onUpdateTeams, selectedPlayers]);
 
-    const handleConfirmTeams = () => {
-        setIsFullView(true);
-    };
+    const handleRemovePlayer = useCallback(
+        (teamId: string, playerId: number) => {
+            const updatedTeams = teams.map((t) => {
+                if (t.id === teamId) {
+                    return {
+                        ...t,
+                        players: t.players.filter((p) => p.id !== playerId),
+                    };
+                }
+                return t;
+            });
+            onUpdateTeams(updatedTeams);
+        },
+        [teams, onUpdateTeams],
+    );
 
     const handleStart = () => {
         onStartGame(rounds);
         navigate("/scoreboard");
     };
 
-    if (isFullView) {
+    // Selection View
+    if (step === "select") {
+        return (
+            <div className="page selection-view">
+                <div className="page-header">
+                    <h1 className="page-title">
+                        Select <span className="gradient-text">Players</span>
+                    </h1>
+                    <p className="page-subtitle">
+                        Who's playing today? ({selectedIds.length} selected)
+                    </p>
+                    <div className="selection-actions">
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={selectAll}
+                        >
+                            Select All
+                        </button>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={deselectAll}
+                        >
+                            Deselect All
+                        </button>
+                    </div>
+                </div>
+
+                <div className="players-selection-grid">
+                    {initialPlayers.map((p) => (
+                        <div
+                            key={p.id}
+                            className={`player-select-card ${selectedIds.includes(p.id) ? "selected" : ""}`}
+                            onClick={() => togglePlayer(p.id)}
+                        >
+                            <div className="select-check">
+                                {selectedIds.includes(p.id) && (
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="3"
+                                    >
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                )}
+                            </div>
+                            <img
+                                src={p.image}
+                                alt=""
+                                className="player-select-img"
+                            />
+                            <span className="player-select-name">{p.name}</span>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="selection-footer">
+                    <button
+                        className="btn btn-primary btn-lg"
+                        onClick={() => setStep("shuffle")}
+                        disabled={selectedIds.length === 0}
+                    >
+                        Continue to Shuffling →
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Lineup View
+    if (step === "lineup") {
         return (
             <div className="page full-teams-view">
                 <div className="page-header">
@@ -113,6 +226,17 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
                                             className="mini-avatar"
                                         />
                                         <span>{p.name}</span>
+                                        <button
+                                            className="remove-player-btn"
+                                            onClick={() =>
+                                                handleRemovePlayer(
+                                                    team.id,
+                                                    p.id,
+                                                )
+                                            }
+                                        >
+                                            ×
+                                        </button>
                                     </div>
                                 ))}
                             </div>
@@ -122,25 +246,43 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
 
                 <div className="game-setup-panel glass-card">
                     <div className="rounds-config">
-                        <label>Number of Rounds:</label>
-                        <div className="rounds-buttons">
-                            {[1, 3, 5, 7].map((r) => (
-                                <button
-                                    key={r}
-                                    className={`round-btn ${rounds === r ? "active" : ""}`}
-                                    onClick={() => setRounds(r)}
-                                >
-                                    {r}
-                                </button>
-                            ))}
+                        <label>Rounds for Match:</label>
+                        <div className="custom-rounds-input">
+                            <button
+                                className="round-adj-btn"
+                                onClick={() =>
+                                    setRounds(Math.max(1, rounds - 1))
+                                }
+                            >
+                                -
+                            </button>
+                            <input
+                                type="number"
+                                value={rounds}
+                                onChange={(e) =>
+                                    setRounds(
+                                        Math.max(
+                                            1,
+                                            parseInt(e.target.value) || 1,
+                                        ),
+                                    )
+                                }
+                                className="rounds-number-input"
+                            />
+                            <button
+                                className="round-adj-btn"
+                                onClick={() => setRounds(rounds + 1)}
+                            >
+                                +
+                            </button>
                         </div>
                     </div>
                     <div className="setup-actions">
                         <button
                             className="btn btn-secondary"
-                            onClick={() => setIsFullView(false)}
+                            onClick={() => setStep("shuffle")}
                         >
-                            Re-generate
+                            Back to Shuffler
                         </button>
                         <button
                             className="btn btn-primary btn-lg"
@@ -154,6 +296,7 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
         );
     }
 
+    // Shuffle View
     return (
         <div className="page">
             <div className="page-header">
@@ -161,9 +304,20 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
                     Team <span className="gradient-text">Generator</span>
                 </h1>
                 <p className="page-subtitle">
-                    Randomly distribute {totalPlayers} players into balanced
-                    teams
+                    Randomly distribute {selectedPlayers.length} selected
+                    players
                 </p>
+                <div className="shuffler-top-actions">
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setStep("select")}
+                    >
+                        ← Change Players
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={onReset}>
+                        Reset All
+                    </button>
+                </div>
             </div>
 
             <div className="config-panel">
@@ -187,13 +341,9 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
                         <div className="slider-group">
                             <label>
                                 Teams: <strong>{numTeams}</strong>
-                                <span className="label-hint">
-                                    (~{Math.ceil(totalPlayers / numTeams)}{" "}
-                                    players each)
-                                </span>
                             </label>
                             <div className="slider-row">
-                                {[2, 3, 4, 6].map((n) => (
+                                {[2, 3, 4, 6, 8].map((n) => (
                                     <button
                                         key={n}
                                         className={`num-btn ${numTeams === n ? "active" : ""}`}
@@ -208,13 +358,9 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
                         <div className="slider-group">
                             <label>
                                 Players per team: <strong>{teamSize}</strong>
-                                <span className="label-hint">
-                                    (→ {Math.ceil(totalPlayers / teamSize)}{" "}
-                                    teams)
-                                </span>
                             </label>
                             <div className="slider-row">
-                                {[3, 4, 6, 9].map((n) => (
+                                {[2, 3, 4, 5, 8].map((n) => (
                                     <button
                                         key={n}
                                         className={`num-btn ${teamSize === n ? "active" : ""}`}
@@ -232,18 +378,6 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
                     className="btn btn-primary btn-generate"
                     onClick={handleGenerate}
                 >
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        width="20"
-                        height="20"
-                    >
-                        <polyline points="1 4 1 10 7 10" />
-                        <polyline points="23 20 23 14 17 14" />
-                        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
-                    </svg>
                     {teams.length > 0 ? "Regenerate Teams" : "Generate Teams"}
                 </button>
             </div>
@@ -252,32 +386,45 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
                 <>
                     <div className="teams-grid">
                         {teams.map((team, i) => (
-                            <TeamCard
+                            <div
                                 key={team.id}
-                                team={team}
-                                onScoreChange={() => {}}
-                                showScore={false}
-                                animationDelay={i * 80}
-                            />
+                                className="team-container-with-edit"
+                            >
+                                <TeamCard
+                                    team={team}
+                                    onScoreChange={() => {}}
+                                    showScore={false}
+                                    animationDelay={i * 80}
+                                />
+                                <div className="team-inline-edit">
+                                    {team.players.map((p) => (
+                                        <div key={p.id} className="player-tag">
+                                            <span>{p.name.split(" ")[0]}</span>
+                                            <button
+                                                onClick={() =>
+                                                    handleRemovePlayer(
+                                                        team.id,
+                                                        p.id,
+                                                    )
+                                                }
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         ))}
                     </div>
                     <div className="generator-footer">
                         <button
                             className="btn btn-primary btn-lg"
-                            onClick={handleConfirmTeams}
+                            onClick={() => setStep("lineup")}
                         >
                             Confirm Teams & Continue →
                         </button>
                     </div>
                 </>
-            )}
-
-            {teams.length === 0 && (
-                <div className="empty-state">
-                    <div className="empty-icon">⚡</div>
-                    <h2>Ready to shuffle?</h2>
-                    <p>Configure your teams above and hit Generate!</p>
-                </div>
             )}
         </div>
     );
