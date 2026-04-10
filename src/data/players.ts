@@ -18,7 +18,10 @@ export const initialPlayers: Player[] = [
     { id: 18, name: "Himadri Sharma", image: "/hima.jpg" },
     { id: 19, name: "Antil Panwar", image: "/ap.jpg" },
     { id: 21, name: "Tarun", image: "/01.jpeg" },
-    { id: 22, name: "Srishti", image: "/Srishti.jpeg" },
+    { id: 22, name: "Umesh", image: "/umesh.jpeg" },
+    { id: 23, name: "Pawan", image: "/pawan.jpeg" },
+    // { id: 24, name: "Srishti", image: "/Srishti.jpeg" },
+    // { id: 25, name: "Srishti", image: "/Srishti.jpeg" },
 ];
 
 export const TEAM_COLORS = [
