@@ -5,6 +5,9 @@ import HomePage from "./pages/HomePage";
 import TeamsPage from "./pages/TeamsPage";
 import ScoreboardPage from "./pages/ScoreboardPage";
 import TimerPage from "./pages/TimerPage";
+import EndScreenPage from "./pages/EndScreenPage";
+import TestLoadingPage from "./pages/TestLoadingPage";
+import LoadingAnimation from "./components/LoadingAnimationWorking";
 import type { GameState, Team } from "./types";
 import "./App.css";
 
@@ -30,6 +33,8 @@ const App: React.FC = () => {
         }
         return initialGameState;
     });
+
+    const [showLoading, setShowLoading] = useState(true); // Show loading on initial page load
 
     // Persist state on change
     useEffect(() => {
@@ -151,6 +156,13 @@ const App: React.FC = () => {
             <div className="app">
                 <Navbar />
                 <main className="main-content">
+                    {showLoading && (
+                        <LoadingAnimation 
+                            message="Loading Unwind Game..."
+                            duration={2000}
+                            onComplete={() => setShowLoading(false)}
+                        />
+                    )}
                     <Routes>
                         <Route path="/" element={<HomePage />} />
                         <Route
@@ -176,6 +188,16 @@ const App: React.FC = () => {
                                 />
                             }
                         />
+                        <Route 
+                            path="/end" 
+                            element={
+                                <EndScreenPage 
+                                    teams={gameState.teams}
+                                    onNewGame={handleResetGame}
+                                />
+                            } 
+                        />
+                        <Route path="/test-loading" element={<TestLoadingPage />} />
                         <Route path="/timer" element={<TimerPage />} />
                     </Routes>
                 </main>

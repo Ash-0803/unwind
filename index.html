@@ -11,7 +11,27 @@
         <title>Unwind — Team Activity Hub</title>
     </head>
     <body>
+        <div class="preloader" id="preloader">
+            <div class="preloader-content">
+                <h1 class="preloader-title">UNWIND</h1>
+                <div class="preloader-dots">Loading...</div>
+            </div>
+        </div>
         <div id="root"></div>
         <script type="module" src="/src/main.tsx"></script>
+        <script>
+            // Hide preloader when React app loads
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    const preloader = document.getElementById('preloader');
+                    if (preloader) {
+                        preloader.classList.add('hide');
+                        setTimeout(function() {
+                            preloader.style.display = 'none';
+                        }, 500);
+                    }
+                }, 1000);
+            });
+        </script>
     </body>
 </html>

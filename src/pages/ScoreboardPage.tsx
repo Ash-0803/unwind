@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { GameState, TimerState } from "../types";
 import ScoreController from "../components/ScoreController";
 import Timer from "../components/Timer";
+import LoadingAnimation from "../components/LoadingAnimationWorking";
 import { useNavigate } from "react-router-dom";
 
 interface ScoreboardPageProps {
@@ -36,6 +37,9 @@ const ScoreboardPage: React.FC<ScoreboardPageProps> = ({
     // Local timer state for the current round
     const [timer, setTimer] = useState<TimerState>(makeTimer(60));
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    
+    // Loading animation state
+    const [showLoading, setShowLoading] = useState(false);
 
     const clearTick = () => {
         if (intervalRef.current) {
@@ -84,6 +88,19 @@ const ScoreboardPage: React.FC<ScoreboardPageProps> = ({
     useEffect(() => {
         handleTimerReset();
     }, [currentRound, handleTimerReset]);
+
+    const handleNextRoundWithLoading = () => {
+        if (currentRound < totalRounds) {
+            setShowLoading(true);
+            setTimeout(() => {
+                onNextRound();
+                setShowLoading(false);
+            }, 1500);
+        } else {
+            // Navigate to end screen when all rounds are finished
+            navigate("/end");
+        }
+    };
 
     if (!isStarted || teams.length === 0) {
         return (
@@ -290,19 +307,26 @@ const ScoreboardPage: React.FC<ScoreboardPageProps> = ({
                 {currentRound === totalRounds ? (
                     <button
                         className="btn btn-primary btn-lg pulse"
-                        onClick={() => navigate("/")}
+                        onClick={handleNextRoundWithLoading}
                     >
                         Finish Match 🎉
                     </button>
                 ) : (
                     <button
                         className="btn btn-primary btn-lg"
-                        onClick={onNextRound}
+                        onClick={handleNextRoundWithLoading}
                     >
                         Next Round →
                     </button>
                 )}
             </div>
+            
+            {showLoading && (
+                <LoadingAnimation 
+                    message={`Loading Round ${currentRound + 1}...`}
+                    duration={1500}
+                />
+            )}
         </div>
     );
 };
