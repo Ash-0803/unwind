@@ -18,20 +18,31 @@ const EndScreenPage: React.FC<EndScreenPageProps> = ({ teams, onNewGame }) => {
   const navigate = useNavigate();
   const mountRef = useRef<HTMLDivElement>(null);
   const [winner, setWinner] = useState<Team | null>(null);
+  const [isDraw, setIsDraw] = useState(false);
   const [confettiActive, setConfettiActive] = useState(true);
 
   useEffect(() => {
-    // Determine winner
+    // Determine winner or draw
     if (teams.length > 0) {
-      const winningTeam = teams.reduce((prev, current) => 
-        prev.score > current.score ? prev : current
-      );
-      setWinner(winningTeam);
+      const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
+      const topTeam = sortedTeams[0];
+      
+      // Check if it's a draw (top two teams have same score)
+      if (sortedTeams.length > 1 && sortedTeams[1].score === topTeam.score) {
+        setIsDraw(true);
+        setWinner(null);
+      } else {
+        setIsDraw(false);
+        setWinner(topTeam);
+      }
     }
   }, [teams]);
 
   useEffect(() => {
-    if (!mountRef.current || !winner) return;
+    if (!mountRef.current) return;
+    
+    // Only run Three.js if there's a winner or it's a draw
+    if (!winner && !isDraw) return;
 
     // Three.js celebration scene
     const width = mountRef.current.clientWidth;
@@ -229,7 +240,7 @@ const EndScreenPage: React.FC<EndScreenPageProps> = ({ teams, onNewGame }) => {
         (particle.material as THREE.Material).dispose();
       });
     };
-  }, [winner, confettiActive]);
+  }, [winner, isDraw, confettiActive]);
 
   const handleNewGame = () => {
     if (onNewGame) {
@@ -239,11 +250,11 @@ const EndScreenPage: React.FC<EndScreenPageProps> = ({ teams, onNewGame }) => {
     }
   };
 
-  if (!winner) {
+  if (!winner && !isDraw) {
     return (
       <div className="page center-empty">
         <div className="empty-state">
-          <div className="empty-icon">⏳</div>
+          <div className="empty-icon">?</div>
           <h2>Determining Winner...</h2>
         </div>
       </div>
@@ -255,12 +266,24 @@ const EndScreenPage: React.FC<EndScreenPageProps> = ({ teams, onNewGame }) => {
       <div className="end-screen-content">
         <div className="celebration-header">
           <h1 className="winner-title">
-            🏆 <span className="winner-name" style={{ color: winner.color }}>
-              {winner.name}
-            </span> Wins! 🏆
+            {isDraw ? (
+              <>
+                <span className="winner-name">It's a Draw!</span>
+              </>
+            ) : (
+              <>
+                <span className="winner-name" style={{ color: winner.color }}>
+                  {winner.name}
+                </span> Wins! 
+              </>
+            )}
           </h1>
           <div className="final-score">
-            Final Score: <span style={{ color: winner.color }}>{winner.score}</span>
+            {isDraw ? (
+              `Final Score: ${teams[0]?.score || 0} - ${teams[1]?.score || 0}`
+            ) : (
+              <>Final Score: <span style={{ color: winner.color }}>{winner.score}</span></>
+            )}
           </div>
         </div>
 
