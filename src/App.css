@@ -1543,6 +1543,88 @@ input {
 }
 
 /* =============================================
+   SCORE CONTROLLER
+   ============================================= */
+.score-controller {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 4px;
+    min-height: 60px;
+}
+
+.score-btn {
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--primary);
+    color: white;
+    font-size: 24px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.score-btn:hover {
+    background: var(--primary-hover);
+    transform: scale(1.05);
+}
+
+.score-btn:active {
+    transform: scale(0.95);
+}
+
+.score-btn.decrement {
+    background: var(--secondary);
+}
+
+.score-btn.decrement:hover {
+    background: var(--secondary-hover);
+}
+
+.score-display {
+    min-width: 80px;
+    height: 48px;
+    background: transparent;
+    border: none;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--on-surface);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    flex: 1;
+}
+
+.score-display:hover {
+    background: var(--surface-hover);
+}
+
+.score-input {
+    min-width: 80px;
+    height: 48px;
+    background: var(--surface-high);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-md);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--on-surface);
+    text-align: center;
+    flex: 1;
+}
+
+/* =============================================
    SCOREBOARD FLOW
    ============================================= */
 .scoreboard-flow {
