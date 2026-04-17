@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import type { Player, Team } from '../types';
-import { TEAM_COLORS, TEAM_NAMES } from '../data/players';
+import React, { useState } from "react";
+import type { Player, Team } from "../types";
+import { TEAM_COLORS, TEAM_NAMES } from "../data/players";
 
 interface CustomTeamSelectorProps {
   players: Player[];
@@ -14,20 +14,23 @@ const CustomTeamSelector: React.FC<CustomTeamSelectorProps> = ({
   onCancel,
 }) => {
   const [numTeams, setNumTeams] = useState(2);
-  const [selectedTeams, setSelectedTeams] = useState<Record<string, Player[]>>({});
+  const [selectedTeams, setSelectedTeams] = useState<Record<string, Player[]>>(
+    {},
+  );
   const [teamNames, setTeamNames] = useState<Record<string, string>>({});
 
   // Initialize team names and colors when numTeams changes
   React.useEffect(() => {
     const newSelectedTeams: Record<string, Player[]> = {};
     const newTeamNames: Record<string, string> = {};
-    
+
     for (let i = 0; i < numTeams; i++) {
       const teamId = `team-${i}`;
       newSelectedTeams[teamId] = [];
-      newTeamNames[teamId] = TEAM_NAMES[i] || `Team ${String.fromCharCode(65 + i)}`;
+      newTeamNames[teamId] =
+        TEAM_NAMES[i] || `Team ${String.fromCharCode(65 + i)}`;
     }
-    
+
     setSelectedTeams(newSelectedTeams);
     setTeamNames(newTeamNames);
   }, [numTeams]);
@@ -35,17 +38,17 @@ const CustomTeamSelector: React.FC<CustomTeamSelectorProps> = ({
   const handlePlayerSelect = (player: Player, teamId: string) => {
     // Remove player from all teams first
     const newTeams = { ...selectedTeams };
-    Object.keys(newTeams).forEach(key => {
-      newTeams[key] = newTeams[key].filter(p => p.id !== player.id);
+    Object.keys(newTeams).forEach((key) => {
+      newTeams[key] = newTeams[key].filter((p) => p.id !== player.id);
     });
-    
+
     // Add player to selected team
     newTeams[teamId] = [...newTeams[teamId], player];
     setSelectedTeams(newTeams);
   };
 
   const handleTeamNameChange = (teamId: string, name: string) => {
-    setTeamNames(prev => ({ ...prev, [teamId]: name }));
+    setTeamNames((prev) => ({ ...prev, [teamId]: name }));
   };
 
   const handleCreateTeams = () => {
@@ -62,14 +65,14 @@ const CustomTeamSelector: React.FC<CustomTeamSelectorProps> = ({
 
   const getUnassignedPlayers = () => {
     const assignedPlayerIds = new Set<number>();
-    Object.values(selectedTeams).forEach(teamPlayers => {
-      teamPlayers.forEach(player => assignedPlayerIds.add(player.id));
+    Object.values(selectedTeams).forEach((teamPlayers) => {
+      teamPlayers.forEach((player) => assignedPlayerIds.add(player.id));
     });
-    return players.filter(player => !assignedPlayerIds.has(player.id));
+    return players.filter((player) => !assignedPlayerIds.has(player.id));
   };
 
   const isFormValid = () => {
-    return Object.values(selectedTeams).every(team => team.length > 0);
+    return Object.values(selectedTeams).every((team) => team.length > 0);
   };
 
   return (
@@ -82,13 +85,15 @@ const CustomTeamSelector: React.FC<CustomTeamSelectorProps> = ({
       <div className="setup-controls">
         <div className="control-group">
           <label>Number of Teams:</label>
-          <select 
-            value={numTeams} 
+          <select
+            value={numTeams}
             onChange={(e) => setNumTeams(Number(e.target.value))}
             className="select"
           >
-            {[2, 3, 4, 5, 6, 7, 8].map(n => (
-              <option key={n} value={n}>{n} Teams</option>
+            {[2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <option key={n} value={n}>
+                {n} Teams
+              </option>
             ))}
           </select>
         </div>
@@ -99,12 +104,18 @@ const CustomTeamSelector: React.FC<CustomTeamSelectorProps> = ({
           <h2>Teams</h2>
           <div className="custom-teams-grid">
             {Object.keys(selectedTeams).map((teamId, index) => (
-              <div key={teamId} className="custom-team-card" style={{ borderColor: TEAM_COLORS[index % TEAM_COLORS.length] }}>
+              <div
+                key={teamId}
+                className="custom-team-card"
+                style={{ borderColor: TEAM_COLORS[index % TEAM_COLORS.length] }}
+              >
                 <div className="team-header">
                   <input
                     type="text"
                     value={teamNames[teamId]}
-                    onChange={(e) => handleTeamNameChange(teamId, e.target.value)}
+                    onChange={(e) =>
+                      handleTeamNameChange(teamId, e.target.value)
+                    }
                     className="team-name-input"
                     placeholder="Team name"
                     style={{ color: TEAM_COLORS[index % TEAM_COLORS.length] }}
@@ -114,12 +125,16 @@ const CustomTeamSelector: React.FC<CustomTeamSelectorProps> = ({
                   </div>
                 </div>
                 <div className="team-players">
-                  {selectedTeams[teamId].map(player => (
+                  {selectedTeams[teamId].map((player) => (
                     <div key={player.id} className="player-chip">
-                      <img src={player.image} alt={player.name} className="player-avatar" />
+                      <img
+                        src={player.image}
+                        alt={player.name}
+                        className="player-avatar"
+                      />
                       <span>{player.name}</span>
                       <button
-                        onClick={() => handlePlayerSelect(player, '')}
+                        onClick={() => handlePlayerSelect(player, "")}
                         className="remove-player"
                         title="Remove from team"
                       >
@@ -141,9 +156,13 @@ const CustomTeamSelector: React.FC<CustomTeamSelectorProps> = ({
         <div className="players-section">
           <h2>Available Players</h2>
           <div className="players-grid">
-            {getUnassignedPlayers().map(player => (
+            {getUnassignedPlayers().map((player) => (
               <div key={player.id} className="player-card">
-                <img src={player.image} alt={player.name} className="player-avatar" />
+                <img
+                  src={player.image}
+                  alt={player.name}
+                  className="player-avatar"
+                />
                 <div className="player-info">
                   <div className="player-name">{player.name}</div>
                 </div>
@@ -154,7 +173,7 @@ const CustomTeamSelector: React.FC<CustomTeamSelectorProps> = ({
                     className="team-select"
                   >
                     <option value="">Add to team...</option>
-                    {Object.keys(selectedTeams).map((teamId, index) => (
+                    {Object.keys(selectedTeams).map((teamId) => (
                       <option key={teamId} value={teamId}>
                         {teamNames[teamId]}
                       </option>
@@ -171,7 +190,7 @@ const CustomTeamSelector: React.FC<CustomTeamSelectorProps> = ({
         <button onClick={onCancel} className="btn btn-secondary">
           Cancel
         </button>
-        <button 
+        <button
           onClick={handleCreateTeams}
           className="btn btn-primary"
           disabled={!isFormValid()}

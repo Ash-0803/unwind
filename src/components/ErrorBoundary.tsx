@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
-import type { ErrorInfo, ReactNode } from 'react';
+import { Component } from "react";
+import type { ErrorInfo, ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
@@ -22,7 +22,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    console.error("Error caught by boundary:", error, errorInfo);
   }
 
   render() {
@@ -32,29 +32,53 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="page center-empty" style={{ padding: '2rem', textAlign: 'center' }}>
+        <div
+          className="page center-empty"
+          style={{ padding: "2rem", textAlign: "center" }}
+        >
           <div className="empty-state">
             <div className="empty-icon">?</div>
             <h2>Something went wrong</h2>
             <p>We encountered an error while loading this page.</p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
-              <button 
+            <div
+              style={{
+                display: "flex",
+                gap: "1rem",
+                justifyContent: "center",
+                marginTop: "2rem",
+              }}
+            >
+              <button
                 className="btn btn-primary"
                 onClick={() => window.location.reload()}
               >
                 Refresh Page
               </button>
-              <button 
+              <button
                 className="btn btn-secondary"
                 onClick={() => window.history.back()}
               >
                 Go Back
               </button>
             </div>
-            {process.env.NODE_ENV === 'development' && (
-              <details style={{ marginTop: '2rem', textAlign: 'left', background: 'var(--surface)', padding: '1rem', borderRadius: '8px' }}>
+            {process.env.NODE_ENV === "development" && (
+              <details
+                style={{
+                  marginTop: "2rem",
+                  textAlign: "left",
+                  background: "var(--surface)",
+                  padding: "1rem",
+                  borderRadius: "8px",
+                }}
+              >
                 <summary>Error Details</summary>
-                <pre style={{ fontSize: '0.8rem', overflow: 'auto', maxHeight: '200px' }}>
+                <pre
+                  style={{
+                    fontSize: "0.8rem",
+                    overflow: "auto",
+                    maxHeight: "200px",
+                  }}
+                >
                   {this.state.error?.stack}
                 </pre>
               </details>
