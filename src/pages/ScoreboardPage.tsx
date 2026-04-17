@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { GameState, TimerState } from "../types";
 import ScoreController from "../components/ScoreController";
 import Timer from "../components/Timer";
-import LoadingAnimation from "../components/LoadingAnimationWorking";
+import LoadingAnimation from "../components/LoadingAnimation";
 import { useNavigate } from "react-router-dom";
 
 interface ScoreboardPageProps {
@@ -34,7 +34,7 @@ const ScoreboardPage: React.FC<ScoreboardPageProps> = ({
     const { teams, currentRound, totalRounds, roundResults, isStarted } =
         gameState;
 
-    // Local timer state for the current round
+    // Local timer state for current round
     const [timer, setTimer] = useState<TimerState>(makeTimer(60));
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     
@@ -79,15 +79,12 @@ const ScoreboardPage: React.FC<ScoreboardPageProps> = ({
                     return { ...t, remaining: t.remaining - 1 };
                 });
             }, 1000);
-        } else {
-            clearTick();
         }
-        return clearTick;
-    }, [timer.isRunning]);
+    }, [timer.isRunning, timer.remaining]);
 
     useEffect(() => {
-        handleTimerReset();
-    }, [currentRound, handleTimerReset]);
+        setTimer(makeTimer(60));
+    }, [currentRound]);
 
     const handleNextRoundWithLoading = () => {
         if (currentRound < totalRounds) {
@@ -96,31 +93,8 @@ const ScoreboardPage: React.FC<ScoreboardPageProps> = ({
                 onNextRound();
                 setShowLoading(false);
             }, 1500);
-        } else {
-            // Navigate to end screen when all rounds are finished
-            navigate("/end");
         }
     };
-
-    if (!isStarted || teams.length === 0) {
-        return (
-            <div className="page center-empty">
-                <div className="empty-state">
-                    <div className="empty-icon">🎮</div>
-                    <h2>No Active Match</h2>
-                    <p>
-                        Generate teams and start a match to see the scoreboard.
-                    </p>
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => navigate("/teams")}
-                    >
-                        Go to Teams
-                    </button>
-                </div>
-            </div>
-        );
-    }
 
     const currentRoundResults = roundResults.find(
         (r) => r.roundNumber === currentRound,
@@ -142,9 +116,11 @@ const ScoreboardPage: React.FC<ScoreboardPageProps> = ({
                         </button>
                     </div>
                     <div className="round-indicator">
-                        Round{" "}
-                        <span className="round-current">{currentRound}</span>
-                        <span className="round-total">/ {totalRounds}</span>
+                        <div className="round-text">Round</div>
+                        <div className="round-number">
+                            <span className="round-current">{currentRound}</span>
+                            <span className="round-total">/ {totalRounds}</span>
+                        </div>
                     </div>
                     <h1 className="page-title">
                         Live <span className="gradient-text">Match</span>
@@ -195,7 +171,7 @@ const ScoreboardPage: React.FC<ScoreboardPageProps> = ({
                                         onUpdateScore(
                                             currentRound,
                                             team.id,
-                                            score,
+                                            score
                                         )
                                     }
                                     accentColor={team.color}
@@ -274,26 +250,16 @@ const ScoreboardPage: React.FC<ScoreboardPageProps> = ({
                                     key={rNum}
                                     className={
                                         rNum === currentRound
-                                            ? "current-row"
+                                            ? "current-round-row"
                                             : ""
                                     }
                                 >
-                                    <td className="round-cell">R{rNum}</td>
+                                    <td>{rNum}</td>
                                     {teams.map((t) => (
                                         <td key={t.id}>
-                                            <div className="history-cell-content">
-                                                <span className="cell-score">
-                                                    {rRes?.scores[t.id] ?? "-"}
-                                                </span>
-                                                <span className="cell-time">
-                                                    {rRes?.times[t.id] !==
-                                                    undefined
-                                                        ? formatLoggedTime(
-                                                              rRes.times[t.id],
-                                                          )
-                                                        : ""}
-                                                </span>
-                                            </div>
+                                            {rRes?.scores[t.id] !== undefined
+                                                ? rRes.scores[t.id]
+                                                : "-"}
                                         </td>
                                     ))}
                                 </tr>
@@ -303,28 +269,33 @@ const ScoreboardPage: React.FC<ScoreboardPageProps> = ({
                 </table>
             </div>
 
-            <div className="match-actions">
-                {currentRound === totalRounds ? (
+            <div className="next-round-section">
+                <button
+                    className="btn btn-primary btn-lg"
+                    onClick={handleNextRoundWithLoading}
+                    disabled={currentRound >= totalRounds}
+                >
+                    {currentRound >= totalRounds
+                        ? "Match Complete"
+                        : currentRound === totalRounds - 1
+                        ? "Final Round"
+                        : `Next Round →`}
+                </button>
+                {currentRound >= totalRounds && (
                     <button
-                        className="btn btn-primary btn-lg pulse"
-                        onClick={handleNextRoundWithLoading}
+                        className="btn btn-secondary btn-lg"
+                        onClick={() => navigate("/end")}
                     >
-                        Finish Match 🎉
-                    </button>
-                ) : (
-                    <button
-                        className="btn btn-primary btn-lg"
-                        onClick={handleNextRoundWithLoading}
-                    >
-                        Next Round →
+                        View Results
                     </button>
                 )}
             </div>
-            
+
             {showLoading && (
-                <LoadingAnimation 
-                    message={`Loading Round ${currentRound + 1}...`}
-                    duration={1500}
+                <LoadingAnimation
+                    message="Loading next round..."
+                    duration={2000}
+                    onComplete={() => setShowLoading(false)}
                 />
             )}
         </div>

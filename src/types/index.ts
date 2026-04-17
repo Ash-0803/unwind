@@ -12,7 +12,7 @@ export interface Team {
     color: string;
 }
 
-export type TeamGenerationMode = "numTeams" | "teamSize";
+export type TeamGenerationMode = "numTeams" | "teamSize" | "custom";
 
 export interface TimerState {
     duration: number; // in seconds

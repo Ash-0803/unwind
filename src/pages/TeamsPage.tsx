@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from "react";
 import type { Team, TeamGenerationMode, Player } from "../types";
 import { initialPlayers, TEAM_COLORS, TEAM_NAMES } from "../data/players";
 import TeamCard from "../components/TeamCard";
+import CustomTeamSelector from "../components/CustomTeamSelector";
 import { useNavigate } from "react-router-dom";
 
 interface TeamsPageProps {
@@ -59,6 +60,7 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
     const [numTeams, setNumTeams] = useState(2);
     const [teamSize, setTeamSize] = useState(4);
     const [rounds, setRounds] = useState(3);
+    const [showCustomSelector, setShowCustomSelector] = useState(false);
 
     const selectedPlayers = useMemo(
         () => initialPlayers.filter((p) => selectedIds.includes(p.id)),
@@ -334,6 +336,12 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
                     >
                         Players per Team
                     </button>
+                    <button
+                        className={`mode-tab ${mode === "custom" ? "active" : ""}`}
+                        onClick={() => setMode("custom")}
+                    >
+                        Custom Teams
+                    </button>
                 </div>
 
                 <div className="config-control">
@@ -354,7 +362,7 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
                                 ))}
                             </div>
                         </div>
-                    ) : (
+                    ) : mode === "teamSize" ? (
                         <div className="slider-group">
                             <label>
                                 Players per team: <strong>{teamSize}</strong>
@@ -371,15 +379,31 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
                                 ))}
                             </div>
                         </div>
-                    )}
+                    ) : mode === "custom" ? (
+                        <div className="custom-mode-info">
+                            <p>Create custom teams by manually selecting players for each team.</p>
+                            <small>Current mode: {mode}</small>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => {
+                                    console.log('Custom teams button clicked');
+                                    setShowCustomSelector(true);
+                                }}
+                            >
+                                Create Custom Teams
+                            </button>
+                        </div>
+                    ) : null}
                 </div>
 
-                <button
-                    className="btn btn-primary btn-generate"
-                    onClick={handleGenerate}
-                >
-                    {teams.length > 0 ? "Regenerate Teams" : "Generate Teams"}
-                </button>
+                {mode !== "custom" && (
+                    <button
+                        className="btn btn-primary btn-generate"
+                        onClick={handleGenerate}
+                    >
+                        {teams.length > 0 ? "Regenerate Teams" : "Generate Teams"}
+                    </button>
+                )}
             </div>
 
             {teams.length > 0 && (
@@ -428,6 +452,23 @@ const TeamsPage: React.FC<TeamsPageProps> = ({
             )}
         </div>
     );
+
+    // Custom team selector overlay
+    console.log('showCustomSelector:', showCustomSelector);
+    if (showCustomSelector) {
+        console.log('Rendering CustomTeamSelector');
+        return (
+            <CustomTeamSelector
+                players={initialPlayers}
+                onTeamsCreated={(customTeams) => {
+                    onUpdateTeams(customTeams);
+                    setShowCustomSelector(false);
+                    setStep("shuffle");
+                }}
+                onCancel={() => setShowCustomSelector(false)}
+            />
+        );
+    }
 };
 
 export default TeamsPage;

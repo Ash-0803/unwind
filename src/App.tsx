@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 import TeamsPage from "./pages/TeamsPage";
@@ -7,7 +7,8 @@ import ScoreboardPage from "./pages/ScoreboardPage";
 import TimerPage from "./pages/TimerPage";
 import EndScreenPage from "./pages/EndScreenPage";
 import TestLoadingPage from "./pages/TestLoadingPage";
-import LoadingAnimation from "./components/LoadingAnimationWorking";
+import LoadingAnimation from "./components/LoadingAnimation";
+import ErrorBoundary from "./components/ErrorBoundary";
 import type { GameState, Team } from "./types";
 import "./App.css";
 
@@ -21,7 +22,8 @@ const initialGameState: GameState = {
     isStarted: false,
 };
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+    const navigate = useNavigate();
     const [gameState, setGameState] = useState<GameState>(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -42,10 +44,13 @@ const App: React.FC = () => {
     }, [gameState]);
 
     const handleUpdateTeams = (teams: Team[]) => {
+        setShowLoading(true);
         setGameState((prev) => ({ ...prev, teams, isStarted: false }));
+        setTimeout(() => setShowLoading(false), 800);
     };
 
     const handleStartGame = (totalRounds: number) => {
+        setShowLoading(true);
         setGameState((prev) => ({
             ...prev,
             totalRounds,
@@ -53,6 +58,7 @@ const App: React.FC = () => {
             roundResults: [],
             isStarted: true,
         }));
+        setTimeout(() => setShowLoading(false), 800);
     };
 
     const handleUpdateScore = (
@@ -60,6 +66,7 @@ const App: React.FC = () => {
         teamId: string,
         score: number,
     ) => {
+        setShowLoading(true);
         setGameState((prev) => {
             const results = [...prev.roundResults];
             const roundIdx = results.findIndex(
@@ -97,6 +104,7 @@ const App: React.FC = () => {
 
             return { ...prev, roundResults: results, teams: updatedTeams };
         });
+        setTimeout(() => setShowLoading(false), 500);
     };
 
     const handleUpdateTime = (
@@ -131,13 +139,16 @@ const App: React.FC = () => {
             }
             return { ...prev, roundResults: results };
         });
+        setTimeout(() => setShowLoading(false), 500);
     };
 
     const handleNextRound = () => {
+        setShowLoading(true);
         setGameState((prev) => ({
             ...prev,
             currentRound: Math.min(prev.currentRound + 1, prev.totalRounds),
         }));
+        setTimeout(() => setShowLoading(false), 800);
     };
 
     const handleResetGame = () => {
@@ -148,60 +159,69 @@ const App: React.FC = () => {
         ) {
             setGameState(initialGameState);
             localStorage.removeItem(STORAGE_KEY);
+            navigate('/teams');
         }
     };
 
     return (
-        <BrowserRouter>
-            <div className="app">
-                <Navbar />
-                <main className="main-content">
-                    {showLoading && (
-                        <LoadingAnimation 
-                            message="Loading Unwind Game..."
-                            duration={2000}
-                            onComplete={() => setShowLoading(false)}
-                        />
-                    )}
-                    <Routes>
-                        <Route path="/" element={<HomePage />} />
-                        <Route
-                            path="/teams"
-                            element={
-                                <TeamsPage
-                                    teams={gameState.teams}
-                                    onUpdateTeams={handleUpdateTeams}
-                                    onStartGame={handleStartGame}
-                                    onReset={handleResetGame}
-                                />
-                            }
-                        />
-                        <Route
-                            path="/scoreboard"
-                            element={
-                                <ScoreboardPage
-                                    gameState={gameState}
-                                    onUpdateScore={handleUpdateScore}
-                                    onUpdateTime={handleUpdateTime}
-                                    onNextRound={handleNextRound}
-                                    onReset={handleResetGame}
-                                />
-                            }
-                        />
-                        <Route 
-                            path="/end" 
-                            element={
+        <div className="app">
+            <Navbar />
+            <main className="main-content">
+                {showLoading && (
+                    <LoadingAnimation 
+                        message="Loading game..."
+                        duration={2000}
+                        onComplete={() => setShowLoading(false)}
+                    />
+                )}
+                <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route 
+                        path="/teams" 
+                        element={
+                            <TeamsPage
+                                teams={gameState.teams}
+                                onUpdateTeams={handleUpdateTeams}
+                                onStartGame={handleStartGame}
+                                onReset={handleResetGame}
+                            />
+                        }
+                    />
+                    <Route 
+                        path="/scoreboard" 
+                        element={
+                            <ScoreboardPage
+                                gameState={gameState}
+                                onUpdateScore={handleUpdateScore}
+                                onUpdateTime={handleUpdateTime}
+                                onNextRound={handleNextRound}
+                                onReset={handleResetGame}
+                            />
+                        }
+                    />
+                    <Route 
+                        path="/end" 
+                        element={
+                            <ErrorBoundary>
                                 <EndScreenPage 
                                     teams={gameState.teams}
                                     onNewGame={handleResetGame}
                                 />
-                            } 
+                            </ErrorBoundary>
+                        } 
                         />
-                        <Route path="/test-loading" element={<TestLoadingPage />} />
-                        <Route path="/timer" element={<TimerPage />} />
-                    </Routes>
-                </main>
-            </div>
+                    <Route path="/test-loading" element={<TestLoadingPage />} />
+                    <Route path="/timer" element={<TimerPage />} />
+                </Routes>
+            </main>
+        </div>
+    );
+};
+
+const App: React.FC = () => {
+    return (
+        <BrowserRouter>
+            <AppContent />
         </BrowserRouter>
     );
 };
